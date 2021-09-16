@@ -10,7 +10,7 @@ const client = new Discord.Client();
 const queue = new Map();
 
 client.once('ready', () => {
-    console.log('Bot Ready.');
+    console.log('Bot ready.');
 });
 
 client.once('reconnecting', () => {
@@ -57,11 +57,6 @@ client.on('message', async message => {
 });
 
 async function execute(message, serverQueue) {
-    if (message.channel.id != botChannelId) {
-        // Wrong channel, don't respond
-        return;
-    }
-
     const voiceChannel = message.member.voice.channel;
 
     if (!voiceChannel) {
@@ -146,16 +141,10 @@ client.login(token);
 // Start website
 
 const http = require('http');
-
-const hostname = '127.0.0.1';
-const port = process.env.PORT || 3000;
-
 const server = http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
     res.end('I\'m not really a website. Go away.');
-});
-
-server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
+}).listen(process.env.PORT || 3000, () => {
+    console.log('Web server running.');
 });
