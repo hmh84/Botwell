@@ -1,11 +1,13 @@
 // Configs
 const prefix = '/';
 const token = 'ODg3ODMzNjYwMTQ4MDMxNDg4.YUJ5hw.W7cxYJfLy4EVohcV_F06SWJuzbA';
-const botChannelId = 304369307322810368;
-const huntersUserId = 158633599774490624;
 
+// Packages
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
+const axios = require('axios');
+
+// Common variables
 const client = new Discord.Client();
 const queue = new Map();
 
@@ -73,12 +75,9 @@ async function execute(message, serverQueue) {
 
     const args = message.content.split(' ');
 
-    if (args.length > 2) {
-        message.channel.send(`I only accept 1 argument for \`${args[0]}\`.`);
-        return;
-    }
+    const watchUrl = args.length > 2 ? await queryApi(args.join(' ').replace(args[0] + ' ', ''), message) : args[1];
 
-    ytdl(args[1]).on('info', async (songInfo) => {
+    ytdl(watchUrl).on('info', async (songInfo) => {
         const song = {
             title: songInfo.videoDetails.title,
             url: songInfo.videoDetails.video_url,
@@ -145,6 +144,29 @@ function stop(message, serverQueue) {
     if (!serverQueue) return message.channel.send('There\'s no songs in queue dumbass');
 
     serverQueue.connection.dispatcher.end();
+}
+
+const baseApiUrl = 'https://youtube.googleapis.com/youtube/v3';
+const apiKey = 'AIzaSyAOBqygUoqQNcOKAiOTptrVBcUY3uu6-Os';
+
+async function queryApi(query, message) {
+    try {
+        const fullUrl = `${baseApiUrl}/search?part=snippet&q=${query.split(' ').join('+')}&type=video&order=viewCount&key=${apiKey}`;
+        const response = await axios.get(fullUrl);
+        const searchResults = response.data.items;
+        if (searchResults.length == 0) {
+            // No results
+            message.channel.send(`No results found for \`${query}\``);
+            return;
+        }
+
+        const watchUrl = `https://www.youtube.com/watch?v=${searchResults[0].id.videoId}`;
+        return watchUrl;
+    } catch (err) {
+        message.channel.send('There was an API error while querying YouTube.');
+        console.log(err);
+        return false;
+    }
 }
 
 client.login(token);
