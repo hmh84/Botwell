@@ -34,7 +34,9 @@ client.on('message', async message => {
         return;
     } else if (message.content.startsWith(`${prefix}stop`)) {
         stop(message, serverQueue);
-        serverQueue.songs = [];
+        if (serverQueue && serverQueue.songs) {
+            serverQueue.songs = [];
+        }
         return;
     } else if (message.content.startsWith(`${prefix}queue`)) {
         if (!serverQueue || serverQueue.songs.length == 0) {
