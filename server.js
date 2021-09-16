@@ -78,7 +78,7 @@ async function execute(message, serverQueue) {
         return;
     }
 
-    ytdl(args[1]).on('info', async (info) => {
+    ytdl(args[1]).on('info', async (songInfo) => {
         const song = {
             title: songInfo.videoDetails.title,
             url: songInfo.videoDetails.video_url,
