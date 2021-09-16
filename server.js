@@ -1,26 +1,27 @@
-const prefix = "/";
-const token = "ODg3ODMzNjYwMTQ4MDMxNDg4.YUJ5hw.W7cxYJfLy4EVohcV_F06SWJuzbA";
+// Configs
+const prefix = '/';
+const token = 'ODg3ODMzNjYwMTQ4MDMxNDg4.YUJ5hw.W7cxYJfLy4EVohcV_F06SWJuzbA';
+const botChannelId = 304369307322810368;
+const huntersUserId = 158633599774490624;
 
-const Discord = require("discord.js");
-const ytdl = require("ytdl-core");
-
+const Discord = require('discord.js');
+const ytdl = require('ytdl-core');
 const client = new Discord.Client();
-
 const queue = new Map();
 
-client.once("ready", () => {
-    console.log("Ready!");
+client.once('ready', () => {
+    console.log('Bot Ready.');
 });
 
-client.once("reconnecting", () => {
-    console.log("Reconnecting!");
+client.once('reconnecting', () => {
+    console.log('Bot Reconnecting.');
 });
 
-client.once("disconnect", () => {
-    console.log("Disconnect!");
+client.once('disconnect', () => {
+    console.log('Bot Disconnected.');
 });
 
-client.on("message", async message => {
+client.on('message', async message => {
     if (message.author.bot || !message.content.startsWith(prefix)) return;
 
     const serverQueue = queue.get(message.guild.id);
@@ -35,22 +36,45 @@ client.on("message", async message => {
         stop(message, serverQueue);
         serverQueue.songs = [];
         return;
+    } else if (message.content.startsWith(`${prefix}queue`)) {
+        if (!serverQueue || serverQueue.songs.length == 0) {
+            message.channel.send('There\'s no songs in the queue.');
+            return;
+        }
+
+        const songs = serverQueue.songs;
+        let queueList = songs.length + ' songs in queue:\n';
+        songs.map(song => {
+            queueList += `\n ${songs.indexOf(song) + 1}: ${song.title}`;
+        });
+        message.channel.send(queueList);
+        return;
     } else {
-        message.channel.send("You need to enter a valid command!");
+        message.channel.send('Invalid command.');
     }
 });
 
 async function execute(message, serverQueue) {
-    const voiceChannel = message.member.voice.channel;
-
-    if (!voiceChannel) return message.channel.send("You need to be in a voice channel to play music!");
-
-    const permissions = voiceChannel.permissionsFor(message.client.user);
-    if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
-        return message.channel.send("I need the permissions to join and speak in your voice channel!");
+    if (message.channel.id != botChannelId) {
+        // Wrong channel, don't respond
+        return;
     }
 
-    const args = message.content.split(" ");
+    const voiceChannel = message.member.voice.channel;
+
+    if (!voiceChannel) {
+        // Sender is not in voice chat
+        message.channel.send('No fuck you, get in the voice chat to add songs.');
+        return;
+    }
+
+    const permissions = voiceChannel.permissionsFor(message.client.user);
+    if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
+        message.channel.send('I don\'t have permission to play in your voice channel.');
+        return;
+    }
+
+    const args = message.content.split(' ');
     const songInfo = await ytdl.getInfo(args[1]);
     const song = {
         title: songInfo.videoDetails.title,
@@ -82,7 +106,8 @@ async function execute(message, serverQueue) {
         }
     } else {
         serverQueue.songs.push(song);
-        return message.channel.send(`${song.title} has been added to the queue!`);
+        message.channel.send(`Added ${song.title} to the queue.`);
+        return;
     }
 }
 
@@ -94,21 +119,22 @@ function play(guild, song) {
         return;
     }
 
+    serverQueue.songs.shift();
+
     const dispatcher = serverQueue.connection
         .play(ytdl(song.url))
-        .on("finish", () => {
-            serverQueue.songs.shift();
+        .on('finish', () => {
             play(guild, serverQueue.songs[0]);
         })
-        .on("error", error => console.error(error));
+        .on('error', error => console.error(error));
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    serverQueue.textChannel.send(`Now Playing: **${song.title}**`);
+    serverQueue.textChannel.send(`Playing: **${song.title}**`);
 }
 
 function stop(message, serverQueue) {
-    if (!message.member.voice.channel) return message.channel.send("You have to be in a voice channel to stop the music!");
+    if (!message.member.voice.channel) return message.channel.send('No fuck you, get in the voice chat first to stop the music.');
 
-    if (!serverQueue) return message.channel.send("There's no songs dumbass");
+    if (!serverQueue) return message.channel.send('There\'s no songs in queue dumbass');
 
     serverQueue.connection.dispatcher.end();
 }
