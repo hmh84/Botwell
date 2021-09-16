@@ -52,7 +52,7 @@ client.on('message', async message => {
         message.channel.send(queueList);
         return;
     } else {
-        message.channel.send('Invalid command.');
+        message.channel.send(`\`${message.content.split(' ')}\` is not a command.`);
     }
 });
 
@@ -72,40 +72,51 @@ async function execute(message, serverQueue) {
     }
 
     const args = message.content.split(' ');
-    const songInfo = await ytdl.getInfo(args[1]);
-    const song = {
-        title: songInfo.videoDetails.title,
-        url: songInfo.videoDetails.video_url,
-    };
 
-    if (!serverQueue) {
-        const queueConstruct = {
-            textChannel: message.channel,
-            voiceChannel: voiceChannel,
-            connection: null,
-            songs: [],
-            volume: 5,
-            playing: true
-        };
-
-        queue.set(message.guild.id, queueConstruct);
-
-        queueConstruct.songs.push(song);
-
-        try {
-            var connection = await voiceChannel.join();
-            queueConstruct.connection = connection;
-            play(message.guild, queueConstruct.songs[0]);
-        } catch (err) {
-            console.log(err);
-            queue.delete(message.guild.id);
-            return message.channel.send(err);
-        }
-    } else {
-        serverQueue.songs.push(song);
-        message.channel.send(`Added ${song.title} to the queue.`);
+    if (args.length > 2) {
+        message.channel.send(`I only accept 1 argument for \`${args[0]}\`.`);
         return;
     }
+
+    ytdl(args[1]).on('info', async (info) => {
+        const song = {
+            title: songInfo.videoDetails.title,
+            url: songInfo.videoDetails.video_url,
+        };
+
+        if (!serverQueue) {
+            const queueConstruct = {
+                textChannel: message.channel,
+                voiceChannel: voiceChannel,
+                connection: null,
+                songs: [],
+                volume: 5,
+                playing: true
+            };
+
+            queue.set(message.guild.id, queueConstruct);
+
+            queueConstruct.songs.push(song);
+
+            try {
+                var connection = await voiceChannel.join();
+                queueConstruct.connection = connection;
+                play(message.guild, queueConstruct.songs[0]);
+            } catch (err) {
+                console.log(err);
+                queue.delete(message.guild.id);
+                return message.channel.send(err);
+            }
+        } else {
+            serverQueue.songs.push(song);
+            message.channel.send(`${song.title} was added to the queue.`);
+            return;
+        }
+    }).on("error", error => {
+        message.channel.send(`There was an error with your search criteria. I only accept youtube links right now.`);
+        console.error(error.stack);
+        return;
+    });
 }
 
 function play(guild, song) {
