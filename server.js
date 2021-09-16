@@ -1,29 +1,18 @@
-// Configs
-const prefix = '/';
-const token = 'ODg3ODMzNjYwMTQ4MDMxNDg4.YUJ5hw.W7cxYJfLy4EVohcV_F06SWJuzbA';
-
 // Packages
+// ===============
+
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const axios = require('axios');
 
 // Common variables
+// ===============
+
+const prefix = '/';
 const client = new Discord.Client();
 const queue = new Map();
 
-client.once('ready', () => {
-    console.log('Bot ready.');
-});
-
-client.once('reconnecting', () => {
-    console.log('Bot Reconnecting.');
-});
-
-client.once('disconnect', () => {
-    console.log('Bot Disconnected.');
-});
-
-client.on('message', async message => {
+client.on('message', async (message) => {
     if (message.author.bot || !message.content.startsWith(prefix)) return;
 
     const serverQueue = queue.get(message.guild.id);
@@ -73,9 +62,12 @@ async function execute(message, serverQueue) {
         return;
     }
 
-    const args = message.content.split(' ');
+    const msgContent = message.content;
+    const msgArgs = msgContent.split(' ');
+    const query = msgContent.replace(msgArgs[0], '').trim();
+    const watchUrl = ytdl.validateURL(query) ? msgArgs[1] : await queryApi(query, message);
 
-    const watchUrl = args.length > 2 ? await queryApi(args.join(' ').replace(args[0] + ' ', ''), message) : args[1];
+    if (!watchUrl) return;
 
     ytdl(watchUrl).on('info', async (songInfo) => {
         const song = {
@@ -98,20 +90,19 @@ async function execute(message, serverQueue) {
             queueConstruct.songs.push(song);
 
             try {
-                var connection = await voiceChannel.join();
-                queueConstruct.connection = connection;
+                queueConstruct.connection = await voiceChannel.join();
                 play(message.guild, queueConstruct.songs[0]);
-            } catch (err) {
-                console.log(err);
+            } catch (error) {
+                console.error(error);
                 queue.delete(message.guild.id);
-                return message.channel.send(err);
+                return message.channel.send('Bot failed to join the chat and or to play a song.');
             }
         } else {
             serverQueue.songs.push(song);
             message.channel.send(`**${song.title}** was added to the queue.`);
             return;
         }
-    }).on("error", error => {
+    }).on('error', (error) => {
         message.channel.send(`There was an error with your search criteria. I only accept youtube links right now.`);
         console.error(error.stack);
         return;
@@ -133,9 +124,10 @@ function play(guild, song) {
         .on('finish', () => {
             play(guild, serverQueue.songs[0]);
         })
-        .on('error', error => console.error(error));
+        .on('error', (error) => console.error(error));
+
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    serverQueue.textChannel.send(`Playing: **${song.title}**`);
+    serverQueue.textChannel.send(`Playing: **${song.title}** ${song.url}`);
 }
 
 function stop(message, serverQueue) {
@@ -146,35 +138,46 @@ function stop(message, serverQueue) {
     serverQueue.connection.dispatcher.end();
 }
 
+// Youtube API
+// ===============
+
+const youtubeApiKey = process.env.YOUTUBE_API_TOKEN;
 const baseApiUrl = 'https://youtube.googleapis.com/youtube/v3';
-const apiKey = 'AIzaSyAOBqygUoqQNcOKAiOTptrVBcUY3uu6-Os';
 
 async function queryApi(query, message) {
+    const fullUrl = `${baseApiUrl}/search?part=snippet&q=${query.split(' ').join('+')}&type=video&order=viewCount&key=${youtubeApiKey}`;
+
     try {
-        const fullUrl = `${baseApiUrl}/search?part=snippet&q=${query.split(' ').join('+')}&type=video&order=viewCount&key=${apiKey}`;
         const response = await axios.get(fullUrl);
         const searchResults = response.data.items;
+
         if (searchResults.length == 0) {
-            // No results
             message.channel.send(`No results found for \`${query}\``);
             return;
         }
 
-        const watchUrl = `https://www.youtube.com/watch?v=${searchResults[0].id.videoId}`;
-        return watchUrl;
-    } catch (err) {
+        return `https://www.youtube.com/watch?v=${searchResults[0].id.videoId}`;
+    } catch (error) {
         message.channel.send('There was an API error while querying YouTube.');
-        console.log(err);
+        console.error(error);
         return false;
     }
 }
 
-client.login(token);
+// Start discord bot
+// ===============
+
+
+client.once('ready', () => { console.log('Discord bot ready.'); });
+client.once('reconnecting', () => { console.log('Discord bot reconnecting.'); });
+client.once('disconnect', () => { console.log('Discord bot disconnected.'); });
+client.login(process.env.DISCORD_BOT_TOKEN);
 
 // Start website
+// ===============
 
 const http = require('http');
-const server = http.createServer((req, res) => {
+http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
     res.end('I might wake up and any moment! Nahhh I\'m still asleep.');

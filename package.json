@@ -1,20 +1,21 @@
 {
-  "dependencies": {
-    "@discordjs/opus": "^0.5.3",
-    "axios": "^0.21.4",
-    "discord.js": "^12.5.3",
-    "ffmpeg": "^0.0.4",
-    "fluent-ffmpeg": "^2.1.2",
-    "ytdl-core": "^4.9.1"
-  },
-  "name": "botwell",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+	"dependencies": {
+		"@discordjs/opus": "^0.5.3",
+		"axios": "^0.21.4",
+		"discord.js": "^12.5.3",
+		"dotenv": "^10.0.0",
+		"ffmpeg": "^0.0.4",
+		"fluent-ffmpeg": "^2.1.2",
+		"ytdl-core": "^4.9.1"
+	},
+	"name": "botwell",
+	"version": "1.0.0",
+	"main": "server.js",
+	"scripts": {
+		"start": "node -r dotenv/config server.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": ""
 }
