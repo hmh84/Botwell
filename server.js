@@ -1,5 +1,7 @@
+const prefix = "/";
+const token = "ODg3ODMzNjYwMTQ4MDMxNDg4.YUJ5hw.W7cxYJfLy4EVohcV_F06SWJuzbA";
+
 const Discord = require("discord.js");
-const { prefix, token } = require("./config.json");
 const ytdl = require("ytdl-core");
 
 const client = new Discord.Client();
