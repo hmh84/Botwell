@@ -73,10 +73,7 @@ async function execute(message, serverQueue) {
 
     const args = message.content.split(' ');
 
-    if (args.length = 1) {
-        message.channel.send(`I require 1 argument for \`${args[0]}\`.`);
-        return;
-    } else if (args.length > 2) {
+    if (args.length > 2) {
         message.channel.send(`I only accept 1 argument for \`${args[0]}\`.`);
         return;
     }
