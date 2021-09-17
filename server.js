@@ -93,7 +93,7 @@ async function execute(message, serverQueue) {
             return;
         }
     }).on('error', (error) => {
-        message.channel.send(`There was an error with your search criteria. I only accept youtube links right now.`);
+        message.channel.send(`Failed to play the requested audio:\n${error}`);
         console.error(error.stack);
         return;
     });
