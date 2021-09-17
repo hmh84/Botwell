@@ -5,7 +5,7 @@ const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const axios = require('axios');
 
-// Common variables
+// Discord Bot
 // ===============
 
 const prefix = '/';
@@ -16,34 +16,24 @@ client.on('message', async (message) => {
     if (message.author.bot || !message.content.startsWith(prefix)) return;
 
     const serverQueue = queue.get(message.guild.id);
+    const command = message.content.split(' ')[0].replace(prefix, '');
 
-    if (message.content.startsWith(`${prefix}play`)) {
-        execute(message, serverQueue);
-        return;
-    } else if (message.content.startsWith(`${prefix}skip`)) {
-        stop(message, serverQueue);
-        return;
-    } else if (message.content.startsWith(`${prefix}stop`)) {
-        stop(message, serverQueue);
-        if (serverQueue && serverQueue.songs) {
-            serverQueue.songs = [];
-        }
-        return;
-    } else if (message.content.startsWith(`${prefix}queue`)) {
-        if (!serverQueue || serverQueue.songs.length == 0) {
-            message.channel.send('There\'s no songs in the queue.');
-            return;
-        }
-
-        const songs = serverQueue.songs;
-        let queueList = songs.length + ' songs in queue:\n';
-        songs.map(song => {
-            queueList += `\n ${songs.indexOf(song) + 1}: ${song.title}`;
-        });
-        message.channel.send(queueList);
-        return;
-    } else {
-        message.channel.send(`\`${message.content.split(' ')}\` is not a command.`);
+    switch (command) {
+        case 'play':
+            execute(message, serverQueue);
+            break;
+        case 'skip':
+            stop(message, serverQueue);
+            break;
+        case 'stop':
+            stop(message, serverQueue);
+            if (serverQueue && serverQueue.songs) serverQueue.songs = [];
+            break;
+        case 'queue':
+            listQueue(message, serverQueue);
+            break;
+        default:
+            message.channel.send(`\`${message.content.split(' ')}\` is not a command.`);
     }
 });
 
@@ -95,7 +85,7 @@ async function execute(message, serverQueue) {
             } catch (error) {
                 console.error(error);
                 queue.delete(message.guild.id);
-                return message.channel.send('Bot failed to join the chat and or to play a song.');
+                return message.channel.send(`Bot failed to join the chat and or to play a song:\n${error}`);
             }
         } else {
             serverQueue.songs.push(song);
@@ -138,6 +128,20 @@ function stop(message, serverQueue) {
     serverQueue.connection.dispatcher.end();
 }
 
+function listQueue(message, serverQueue) {
+    if (!serverQueue || serverQueue.songs.length == 0) {
+        message.channel.send('There\'s no songs in the queue.');
+        return;
+    }
+
+    const songs = serverQueue.songs;
+    let queueList = songs.length + ' songs in queue:\n';
+    songs.map(song => {
+        queueList += `\n ${songs.indexOf(song) + 1}: ${song.title}`;
+    });
+    message.channel.send(queueList);
+}
+
 // Youtube API
 // ===============
 
@@ -166,7 +170,6 @@ async function queryApi(query, message) {
 
 // Start discord bot
 // ===============
-
 
 client.once('ready', () => { console.log('Discord bot ready.'); });
 client.once('reconnecting', () => { console.log('Discord bot reconnecting.'); });
