@@ -4,6 +4,7 @@
 const Discord = require('discord.js');
 const ytdl = require('ytdl-core');
 const axios = require('axios');
+const http = require('http');
 
 // Discord Bot
 // ===============
@@ -16,7 +17,7 @@ client.on('message', async (message) => {
     if (message.author.bot || !message.content.startsWith(prefix)) return;
 
     const serverQueue = queue.get(message.guild.id);
-    const command = message.content.split(' ')[0].replace(prefix, '');
+    const command = message.content.split(' ')[0].replace(prefix, '').trim().toLowerCase();
 
     switch (command) {
         case 'play':
@@ -179,7 +180,6 @@ client.login(process.env.DISCORD_BOT_TOKEN);
 // Start website
 // ===============
 
-const http = require('http');
 http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
